@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Charge Console | QR Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --od-color: #7c3aed;
+            --bg-gradient: radial-gradient(circle at top left, #f8fafc 0%, #dbeafe 100%);
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+        }
+
+        .premium-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .qr-frame {
+            position: relative;
+            padding: 20px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            border: 2px dashed #e2e8f0;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: calc(100% - 40px);
+            height: 2px;
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            animation: scan 3s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0%, 100% { top: 20px; opacity: 0; }
+            50% { top: calc(100% - 22px); opacity: 1; }
+        }
+
+        .toggle-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Decorative Shapes */
+        .blob {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            animation: move 25s infinite alternate;
+        }
+        .blob-1 { top: -200px; left: -200px; }
+        .blob-2 { bottom: -200px; right: -200px; animation-delay: -7s; }
+
+        @keyframes move {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(150px, 100px) scale(1.1); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 overflow-hidden">
+    <!-- Decorative Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="premium-card w-full max-w-2xl p-10 relative z-10">
+        <a href="home.html" class="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+        </a>
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">QR Console</h1>
+                <p class="text-slate-500 font-medium">Generate validation keys for students</p>
+            </div>
+            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
+                <button id="generate-btn" class="toggle-btn active px-6 py-2.5 rounded-xl text-sm font-bold">
+                    Standard
+                </button>
+                <button id="generate-od-btn" class="toggle-btn px-6 py-2.5 rounded-xl text-sm font-bold">
+                    On-Duty (OD)
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <!-- Left: QR Display -->
+            <div class="flex flex-col items-center">
+                <div class="qr-frame mb-6">
+                    <div id="scan-line" class="scan-line hidden"></div>
+                    <img id="qr-image" src="" alt="QR Code" class="w-64 h-64 object-contain hidden relative z-0">
+                    <div id="qr-loading" class="w-64 h-64 flex items-center justify-center">
+                        <div class="spinner rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
+                    </div>
+                </div>
+                
+                <div id="session-info" class="text-center space-y-2 hidden">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        Active Session
+                    </div>
+                    <p class="text-sm font-bold text-slate-800">
+                        Expires in: <span id="expiry-time" class="text-indigo-600 tabular-nums">--:--</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right: OD Controls -->
+            <div id="od-options" class="hidden animate-in fade-in slide-in-from-right-4 duration-500">
+                <div class="bg-indigo-50/50 border border-indigo-100 rounded-3xl p-6 space-y-6">
+                    <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                        OD Configuration
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-600 uppercase mb-2 ml-1">Student Scope</label>
+                            <input type="text" id="od-scope" placeholder="Enter roll numbers (e.g. 101, 105)" 
+                                class="w-full bg-white border-2 border-indigo-100 rounded-xl p-3 outline-none focus:border-indigo-400 transition-all text-sm">
+                            <p class="text-[10px] text-slate-400 mt-1 ml-1">Leave empty for open session</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-600 uppercase mb-2 ml-1">Session Duration</label>
+                            <select id="od-duration" class="w-full bg-white border-2 border-indigo-100 rounded-xl p-3 outline-none focus:border-indigo-400 transition-all text-sm appearance-none cursor-pointer">
+                                <option value="full-day">Full Day Status</option>
+                                <option value="1-2">Hours 1 & 2</option>
+                                <option value="3-4">Hours 3 & 4</option>
+                                <option value="5-6">Hours 5 & 6</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-message" class="text-red-500 text-sm mt-6 text-center font-medium min-h-[20px]"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let currentSessionId = null;
+        let expiryInterval = null;
+        let autoRefreshTimerId = null;
+
+        function updateExpiryTimer(expiresInMs) {
+            clearInterval(expiryInterval);
+            let remainingTimeMs = expiresInMs;
+            const updateDisplay = () => {
+                if (remainingTimeMs <= 0) {
+                    clearInterval(expiryInterval);
+                    document.getElementById('expiry-time').textContent = `EXPIRED`;
+                    document.getElementById('qr-image').classList.add('grayscale', 'opacity-50');
+                    document.getElementById('scan-line').classList.add('hidden');
+                    return;
+                }
+                const minutes = Math.floor(remainingTimeMs / 60000);
+                const seconds = Math.floor((remainingTimeMs % 60000) / 1000);
+                document.getElementById('expiry-time').textContent = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+            };
+            updateDisplay();
+            expiryInterval = setInterval(() => {
+                remainingTimeMs -= 1000;
+                updateDisplay();
+            }, 1000);
+        }
+
+        async function generateQR(isOD = false) {
+            const normalBtn = document.getElementById('generate-btn');
+            const odBtn = document.getElementById('generate-od-btn');
+            const odOptions = document.getElementById('od-options');
+            
+            // UI Toggle
+            if (isOD) {
+                odBtn.classList.add('active');
+                normalBtn.classList.remove('active');
+                odOptions.classList.remove('hidden');
+            } else {
+                normalBtn.classList.add('active');
+                odBtn.classList.remove('active');
+                odOptions.classList.add('hidden');
+            }
+
+            if (autoRefreshTimerId) clearTimeout(autoRefreshTimerId);
+
+            document.getElementById('qr-image').classList.add('hidden');
+            document.getElementById('qr-image').classList.remove('grayscale', 'opacity-50');
+            document.getElementById('qr-loading').classList.remove('hidden');
+            document.getElementById('session-info').classList.add('hidden');
+            document.getElementById('scan-line').classList.add('hidden');
+            document.getElementById('error-message').textContent = '';
+
+            try {
+                let response;
+                if (isOD) {
+                    const scope = document.getElementById('od-scope').value;
+                    const duration = document.getElementById('od-duration').value;
+                    response = await axios.post(`${API_BASE}/api/generate-od-qr`, { scope, duration });
+                } else {
+                    response = await axios.get(`${API_BASE}/api/generate-qr`);
+                }
+                
+                const data = response.data;
+                if (data.status === "success") {
+                    const qrImage = document.getElementById('qr-image');
+                    qrImage.onload = () => {
+                        qrImage.classList.remove('hidden');
+                        document.getElementById('qr-loading').classList.add('hidden');
+                        document.getElementById('scan-line').classList.remove('hidden');
+                    };
+                    qrImage.src = `${API_BASE}${data.qrImage}?t=${Date.now()}`;
+                    document.getElementById('session-info').classList.remove('hidden');
+                    updateExpiryTimer(data.expiresIn || 90000);
+                    
+                    autoRefreshTimerId = setTimeout(() => generateQR(isOD), (data.expiresIn || 90000) - 10000);
+                }
+            } catch (error) {
+                document.getElementById('error-message').textContent = error.response?.data?.message || 'Connection failed';
+                document.getElementById('qr-loading').classList.add('hidden');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('generate-btn').addEventListener('click', () => generateQR(false));
+            document.getElementById('generate-od-btn').addEventListener('click', () => generateQR(true));
+            generateQR(false);
+        });
+    </script>
+</body>
+</html>
