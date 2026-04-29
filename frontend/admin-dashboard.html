@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Intel | Smart Attendance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #6366f1;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .premium-table thead th {
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            padding: 16px;
+        }
+
+        .premium-table tbody td {
+            padding: 16px;
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .tab-btn.active {
+            color: #6366f1;
+            border-bottom: 2px solid #6366f1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white p-6 hidden lg:flex flex-col">
+        <div class="flex items-center gap-3 mb-10">
+            <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">AdminIntel</h1>
+        </div>
+
+        <nav class="space-y-2 flex-grow">
+            <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Overview
+            </a>
+            <a href="qr-scanner.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                QR Console
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t border-slate-800">
+            <button onclick="localStorage.removeItem('adminToken'); window.location.href='login.html'" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+        <!-- Top Nav -->
+        <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Attendance Intelligence</h2>
+                <p class="text-slate-500 text-sm">System-wide performance metrics</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <input type="date" id="attendanceDate" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="searchDateBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors">
+                    Filter View
+                </button>
+            </div>
+        </header>
+
+        <div class="p-8 space-y-8">
+            <!-- Stats Grid -->
+            <div id="dateSummary" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="stat-card">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Present</div>
+                        <div id="totalPresent" class="text-3xl font-extrabold text-indigo-600">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">On-Duty (OD)</div>
+                        <div id="totalOD" class="text-3xl font-extrabold text-purple-600">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Medical (ML)</div>
+                        <div id="totalMedical" class="text-3xl font-extrabold text-amber-500">--</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Chart -->
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                            </svg>
+                            Distribution by Section
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Daily Table -->
+                    <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800">Daily Records</h3>
+                        </div>
+                        <div class="max-h-[350px] overflow-y-auto">
+                            <table class="w-full premium-table">
+                                <thead class="bg-slate-50 sticky top-0">
+                                    <tr>
+                                        <th class="text-left">Roll No</th>
+                                        <th class="text-left">Name</th>
+                                        <th class="text-left">Section</th>
+                                        <th class="text-left">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dateAttendanceTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Search Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Search Student -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-6">Student Audit</h3>
+                        <div class="space-y-4">
+                            <input type="text" id="studentRollNo" placeholder="Enter University Roll No" 
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button id="searchStudentBtn" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all">
+                                Audit Attendance
+                            </button>
+                        </div>
+                        <div id="studentError" class="text-red-500 mt-4 text-sm font-medium"></div>
+                    </div>
+
+                    <div id="studentDetails" class="hidden bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center text-2xl font-bold mb-4" id="studentInitials">
+                                ST
+                            </div>
+                            <h4 id="studentAuditName" class="text-lg font-bold text-slate-900">--</h4>
+                            <div id="studentPercentage" class="mt-2 text-indigo-600 font-bold text-2xl">--%</div>
+                            <p class="text-slate-400 text-sm">Overall Attendance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Percent Range Search -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm mb-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-slate-800">Defaulter & High Performer Filter</h3>
+                        </div>
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
+                                <span class="text-slate-400 text-xs font-bold mr-3">MIN %</span>
+                                <input type="number" id="minPercentage" value="0" min="0" max="100" class="w-12 bg-transparent outline-none font-bold text-slate-900">
+                            </div>
+                            <div class="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
+                                <span class="text-slate-400 text-xs font-bold mr-3">MAX %</span>
+                                <input type="number" id="maxPercentage" value="75" min="0" max="100" class="w-12 bg-transparent outline-none font-bold text-slate-900">
+                            </div>
+                            <button id="searchPercentageBtn" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">
+                                Scan Records
+                            </button>
+                        </div>
+                        <div id="percentageError" class="text-red-500 mt-4 text-sm"></div>
+                    </div>
+
+                    <div id="percentageResults" class="hidden bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <div class="text-slate-800 font-bold">Filtered Results for <span id="percentageRange" class="text-indigo-600">--</span></div>
+                            <button id="downloadPercentageCsvBtn" class="text-indigo-600 font-bold text-sm hover:underline">Export CSV</button>
+                        </div>
+                        <div class="max-h-[400px] overflow-y-auto">
+                            <table class="w-full premium-table">
+                                <thead class="bg-slate-50 sticky top-0">
+                                    <tr>
+                                        <th class="text-left">Roll No</th>
+                                        <th class="text-left">Name</th>
+                                        <th class="text-left">Section</th>
+                                        <th class="text-left">Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="percentageResultsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    const API_BASE = 'http://localhost:5000';
+    let chartInstance = null;
+    const token = localStorage.getItem('adminToken');
+    if (!token || token !== 'Hello@123') { window.location.href = 'login.html'; }
+
+    function updateChart(labels, data, colors) {
+        if (chartInstance) chartInstance.destroy();
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+    }
+
+    async function viewDateAttendance() {
+        const date = document.getElementById('attendanceDate').value;
+        if (!date) return;
+        
+        try {
+            const response = await axios.get(`${API_BASE}/api/attendance/by-date`, { params: { date } });
+            const records = response.data.data;
+            
+            document.getElementById('dateSummary').classList.remove('hidden');
+            
+            const present = records.filter(r => r.attendanceType === 'Present' || r.status === 'present').length;
+            const od = records.filter(r => r.attendanceType === 'OD' || r.status === 'OD').length;
+            const medical = records.filter(r => r.attendanceType === 'Medical' || r.status?.includes('Medical')).length;
+
+            document.getElementById('totalPresent').textContent = present;
+            document.getElementById('totalOD').textContent = od;
+            document.getElementById('totalMedical').textContent = medical;
+
+            const tableBody = document.getElementById('dateAttendanceTable');
+            tableBody.innerHTML = '';
+            records.forEach(r => {
+                const row = `<tr>
+                    <td>${r.universityRollNo}</td>
+                    <td>${r.name || 'Student'}</td>
+                    <td>${r.section}</td>
+                    <td><span class="px-2 py-1 rounded-lg text-xs font-bold ${r.attendanceType === 'OD' ? 'bg-purple-100 text-purple-700' : (r.attendanceType === 'Medical' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700')}">${r.attendanceType || 'Present'}</span></td>
+                </tr>`;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Section counts for chart
+            const sectionMap = {};
+            records.forEach(r => { sectionMap[r.section] = (sectionMap[r.section] || 0) + 1; });
+            updateChart(Object.keys(sectionMap), Object.values(sectionMap), ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']);
+
+        } catch (error) {
+            console.error(error);
+            alert('Failed to load records');
+        }
+    }
+
+    async function searchByPercentageRange() {
+        const min = document.getElementById('minPercentage').value;
+        const max = document.getElementById('maxPercentage').value;
+        try {
+            const response = await axios.get(`${API_BASE}/api/students/by-attendance-range`, { params: { min, max } });
+            const students = response.data.data;
+            document.getElementById('percentageResults').classList.remove('hidden');
+            document.getElementById('percentageRange').textContent = `${min}% - ${max}%`;
+            
+            const tableBody = document.getElementById('percentageResultsTable');
+            tableBody.innerHTML = '';
+            students.forEach(s => {
+                const row = `<tr>
+                    <td>${s.universityRollNo}</td>
+                    <td>${s.name || s.personalInfo?.fullName || 'N/A'}</td>
+                    <td>${s.section || s.academicInfo?.section || 'N/A'}</td>
+                    <td class="font-bold text-indigo-600">${s.attendancePercentage}%</td>
+                </tr>`;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        } catch (error) { console.error(error); }
+    }
+
+    async function searchStudent() {
+        const rollNo = document.getElementById('studentRollNo').value;
+        try {
+            const response = await axios.get(`${API_BASE}/api/students/${rollNo}/attendance`);
+            const data = response.data.data;
+            document.getElementById('studentDetails').classList.remove('hidden');
+            document.getElementById('studentAuditName').textContent = data.name || 'Student';
+            document.getElementById('studentPercentage').textContent = `${data.attendancePercentage}%`;
+            document.getElementById('studentInitials').textContent = (data.name || 'S').substring(0,2).toUpperCase();
+        } catch (error) { alert('Student not found'); }
+    }
+
+    document.getElementById('searchDateBtn').addEventListener('click', viewDateAttendance);
+    document.getElementById('searchPercentageBtn').addEventListener('click', searchByPercentageRange);
+    document.getElementById('searchStudentBtn').addEventListener('click', searchStudent);
+    document.getElementById('attendanceDate').valueAsDate = new Date();
+    </script>
+</body>
+</html>
