@@ -4,27 +4,15 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // Configuration
-const QR_CODE_VALIDITY = 1.5 * 60 * 1000; // 1.5 minutes in ms
-const QR_CODE_DIR = process.env.QR_CODE_DIR || path.join(__dirname, '..', 'frontend', 'public', 'qrcodes');
-const CACHE_TIME = 90000; // 90 seconds (1.5 minutes), corrected comment
+const QR_CODE_VALIDITY = 15 * 1000; // 15 seconds for dynamic rotation
 
-// Track active sessions and IP cache
+// Track active sessions
 const activeSessions = new Map();
-const ipCache = new Map();
 
-// Ensure QR code directory exists
-if (!fs.existsSync(QR_CODE_DIR)) {
-    fs.mkdirSync(QR_CODE_DIR, { recursive: true });
-}
+
 
 async function generateQRCode(ipAddress) {
-    // Check cache first
-    if (ipCache.has(ipAddress)) {
-        const cached = ipCache.get(ipAddress);
-        if (Date.now() - cached.timestamp < CACHE_TIME) {
-            return cached.data;
-        }
-    }
+
 
     try {
         const sessionId = crypto.randomBytes(16).toString('hex');
@@ -40,10 +28,8 @@ async function generateQRCode(ipAddress) {
             timestamp,
             hash
         }))}`;
-        const fileName = `qr_${timestamp}.png`;
-        const filePath = path.join(QR_CODE_DIR, fileName);
 
-        await QRCode.toFile(filePath, qrData, {
+        const dataUrl = await QRCode.toDataURL(qrData, {
             color: {
                 dark: '#000000',
                 light: '#ffffff'
@@ -62,15 +48,10 @@ async function generateQRCode(ipAddress) {
         }, QR_CODE_VALIDITY);
 
         const result = {
-            qrImage: `/qrcodes/${fileName}`,
+            qrImage: dataUrl,
             sessionId,
-            expiresIn: QR_CODE_VALIDITY // <<< MODIFIED: Added expiresIn
+            expiresIn: QR_CODE_VALIDITY
         };
-
-        ipCache.set(ipAddress, {
-            data: result,
-            timestamp: Date.now()
-        });
 
         return result;
     } catch (error) {
@@ -101,10 +82,8 @@ async function generateODQRCode(ipAddress, options = {}) {
                          .digest('hex');
 
         const qrData = `http://localhost:5000/verify-attendance?data=${encodeURIComponent(JSON.stringify(qrDataObj))}`;
-        const fileName = `od_qr_${timestamp}.png`;
-        const filePath = path.join(QR_CODE_DIR, fileName);
 
-        await QRCode.toFile(filePath, qrData, {
+        const dataUrl = await QRCode.toDataURL(qrData, {
             color: {
                 dark: '#8e44ad', // Different color for OD
                 light: '#ffffff'
@@ -127,7 +106,7 @@ async function generateODQRCode(ipAddress, options = {}) {
         }, validity);
 
         return {
-            qrImage: `/qrcodes/${fileName}`,
+            qrImage: dataUrl,
             sessionId,
             expiresIn: validity
         };
@@ -149,34 +128,7 @@ function validateSession(sessionId) {
     return session; // Return session object to check isOD etc
 }
 
-function cleanupOldQRCodes() {
-    const now = Date.now();
-    fs.readdir(QR_CODE_DIR, (err, files) => {
-        if (err) {
-            console.error('Cleanup error:', err);
-            return;
-        }
-        
-        files.forEach(file => {
-            if ((file.startsWith('qr_') || file.startsWith('od_qr_')) && file.endsWith('.png')) {
-                const parts = file.split('_');
-                const timestampPart = parts[parts.length - 1].split('.')[0];
-                const fileTimestamp = parseInt(timestampPart);
-                if (isNaN(fileTimestamp)) return;
-                
-                // Use a larger window for cleanup to be safe
-                if (now - fileTimestamp > 30 * 60 * 1000) { 
-                    fs.unlink(path.join(QR_CODE_DIR, file), err => {
-                        if (err) console.error('Error deleting file:', file, err);
-                    });
-                }
-            }
-        });
-    });
-}
 
-setInterval(cleanupOldQRCodes, 5 * 60 * 1000);
-cleanupOldQRCodes();
 
 module.exports = {
     generateQRCode,

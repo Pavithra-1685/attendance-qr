@@ -82,6 +82,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const API_ENDPOINT = "http://localhost:5000/mark-attendance";
     let isSubmitting = false;
 
+    // Smooth Workflow: Auto-fill saved details
+    if (localStorage.getItem('studentName')) {
+        document.getElementById("name").value = localStorage.getItem('studentName');
+        document.getElementById("universityRollNo").value = localStorage.getItem('studentRollNo');
+        document.getElementById("section").value = localStorage.getItem('studentSection');
+        document.getElementById("classRollNo").value = localStorage.getItem('studentClassRoll');
+        
+        // If session exists, encourage quick 1-click submission
+        if (sessionId) {
+            submitButton.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> Quick Submit`;
+        }
+    }
+
     // Dashboard button handler
     document.getElementById('view-dashboard-btn').addEventListener('click', function() {
         const rollNo = document.getElementById('rollInput').value.trim();
@@ -205,6 +218,12 @@ document.addEventListener("DOMContentLoaded", () => {
                             statusElement.innerText = data.message;
                             statusElement.className = `text-center mt-4 text-sm text-green-600`;
         
+                            // Save details for seamless future logins
+                            localStorage.setItem('studentName', name);
+                            localStorage.setItem('studentRollNo', universityRollNo);
+                            localStorage.setItem('studentSection', section);
+                            localStorage.setItem('studentClassRoll', classRollNo);
+
                             // Redirect to dashboard with roll number
                             window.location.href = `/dashboard.html?rollNo=${encodeURIComponent(universityRollNo)}`;
                         } catch (error) {

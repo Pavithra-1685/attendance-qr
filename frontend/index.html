@@ -114,7 +114,7 @@
     <div class="max-w-xl w-full relative z-10">
         <!-- Header -->
         <div class="text-center mb-10 relative">
-            <a href="home.html" class="absolute top-0 right-0 flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors shadow-sm">
+            <a href="login.html" onclick="localStorage.clear()" class="absolute top-0 right-0 flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
@@ -126,7 +126,12 @@
             </div>
             <div class="block"></div>
             <div class="inline-block p-4 bg-white rounded-3xl shadow-xl mb-6">
-                <img src="logo3.png" alt="Logo" class="w-16 h-16 object-contain">
+                <svg class="w-16 h-16 text-indigo-600 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14v7" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 9.5v5" />
+                </svg>
             </div>
             <h1 class="text-4xl font-bold text-slate-900 tracking-tight">Smart Attendance</h1>
             <p class="text-slate-500 mt-2 text-lg">Secure classroom validation system</p>
@@ -188,7 +193,7 @@
         <!-- Medical & Dashboard Quick Actions -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Hospital Leave Card -->
-            <div class="glass-card p-6 border-l-4 border-amber-400 flex flex-col">
+            <div class="glass-card p-8 border-l-4 border-amber-400 flex flex-col">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-2.5 bg-amber-100 rounded-xl">
                         <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,18 +202,18 @@
                     </div>
                     <h3 class="font-bold text-slate-800 text-lg">Hospital Permission</h3>
                 </div>
-                <div class="space-y-3 mt-auto">
-                    <button onclick="requestMedicalLeave()" class="btn-gradient w-full py-3 rounded-xl font-bold text-white shadow-md text-sm">
+                <div class="space-y-4 mt-auto">
+                    <button onclick="requestMedicalLeave()" class="btn-gradient w-full py-4 rounded-xl font-bold text-white shadow-md text-sm">
                         Request Medical Leave
                     </button>
-                    <button onclick="uploadMedicalProof()" class="btn-outline w-full py-3 rounded-xl font-bold text-sm">
+                    <button onclick="uploadMedicalProof()" class="btn-outline w-full py-4 rounded-xl font-bold text-sm">
                         Upload Proof Document
                     </button>
                 </div>
             </div>
 
             <!-- Attendance Check Card -->
-            <div class="glass-card p-6 border-l-4 border-indigo-500 flex flex-col">
+            <div class="glass-card p-8 border-l-4 border-indigo-500 flex flex-col">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="p-2.5 bg-indigo-100 rounded-xl">
                         <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,15 +222,15 @@
                     </div>
                     <h3 class="font-bold text-slate-800 text-lg">Check Status</h3>
                 </div>
-                <div class="space-y-3 mt-auto">
+                <div class="space-y-4 mt-auto">
                     <div class="relative">
                         <input type="text" id="rollInput" placeholder="Enter University Roll No" 
-                            class="premium-input w-full p-3.5 rounded-xl text-sm outline-none bg-white/50 pr-12">
-                        <div class="absolute right-3 top-3 text-slate-300">
+                            class="premium-input w-full p-4 rounded-xl text-sm outline-none bg-white/50 pr-12">
+                        <div class="absolute right-4 top-4 text-slate-300">
                             <i class="fas fa-id-card"></i>
                         </div>
                     </div>
-                    <button id="view-dashboard-btn" class="bg-slate-900 text-white w-full py-3 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm">
+                    <button id="view-dashboard-btn" class="bg-slate-900 text-white w-full py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-sm">
                         View Student Dashboard
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />

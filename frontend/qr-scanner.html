@@ -55,13 +55,14 @@
 
         .toggle-btn {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #64748b;
         }
 
         .toggle-btn.active {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
         }
 
         .spinner {
@@ -99,24 +100,27 @@
     <div class="blob blob-2"></div>
 
     <div class="premium-card w-full max-w-2xl p-10 relative z-10">
-        <a href="home.html" class="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
-        </a>
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-            <div class="text-center md:text-left">
+
+        <div class="flex flex-col md:flex-row justify-between items-start mb-10 gap-6">
+            <div class="flex-1">
                 <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">QR Console</h1>
                 <p class="text-slate-500 font-medium">Generate validation keys for students</p>
             </div>
-            <div class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <button id="generate-btn" class="toggle-btn active px-6 py-2.5 rounded-xl text-sm font-bold">
-                    Standard
-                </button>
-                <button id="generate-od-btn" class="toggle-btn px-6 py-2.5 rounded-xl text-sm font-bold">
-                    On-Duty (OD)
-                </button>
+            <div class="flex items-center gap-3">
+                <div class="flex bg-slate-100 p-1.5 rounded-2xl">
+                    <button id="generate-btn" class="toggle-btn px-6 py-2.5 rounded-xl text-sm font-bold">
+                        Standard
+                    </button>
+                    <button id="generate-od-btn" class="toggle-btn active px-6 py-2.5 rounded-xl text-sm font-bold">
+                        On-Duty (OD)
+                    </button>
+                </div>
+                <a href="login.html" onclick="localStorage.clear()" class="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 rounded-2xl text-sm font-bold hover:bg-red-100 transition-all shadow-sm border border-red-100">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logout
+                </a>
             </div>
         </div>
 
@@ -140,7 +144,7 @@
                         Active Session
                     </div>
                     <p class="text-sm font-bold text-slate-800">
-                        Expires in: <span id="expiry-time" class="text-indigo-600 tabular-nums">--:--</span>
+                        Next Rotation: <span id="expiry-time" class="text-indigo-600 tabular-nums">--s</span>
                     </p>
                 </div>
             </div>
@@ -178,7 +182,24 @@
         </div>
 
         <div id="error-message" class="text-red-500 text-sm mt-6 text-center font-medium min-h-[20px]"></div>
+
+        <!-- Recent Scans Section -->
+        <div class="mt-8 pt-8 border-t border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Live Activity</h3>
+                <span id="scan-count" class="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold">0 Scans</span>
+            </div>
+            <div id="recent-scans" class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                <div class="text-center py-4 text-slate-400 text-xs">Waiting for scans...</div>
+            </div>
+        </div>
     </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
 
     <script>
         const API_BASE = 'http://localhost:5000';
@@ -199,7 +220,11 @@
                 }
                 const minutes = Math.floor(remainingTimeMs / 60000);
                 const seconds = Math.floor((remainingTimeMs % 60000) / 1000);
-                document.getElementById('expiry-time').textContent = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+                if (minutes > 0) {
+                    document.getElementById('expiry-time').textContent = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+                } else {
+                    document.getElementById('expiry-time').textContent = `${seconds}s`;
+                }
             };
             updateDisplay();
             expiryInterval = setInterval(() => {
@@ -251,11 +276,13 @@
                         document.getElementById('qr-loading').classList.add('hidden');
                         document.getElementById('scan-line').classList.remove('hidden');
                     };
-                    qrImage.src = `${API_BASE}${data.qrImage}?t=${Date.now()}`;
+                    qrImage.src = data.qrImage;
                     document.getElementById('session-info').classList.remove('hidden');
-                    updateExpiryTimer(data.expiresIn || 90000);
+                    updateExpiryTimer(data.expiresIn);
                     
-                    autoRefreshTimerId = setTimeout(() => generateQR(isOD), (data.expiresIn || 90000) - 10000);
+                    // Rotate faster for standard sessions (dynamic)
+                    const refreshBuffer = isOD ? 30000 : 5000;
+                    autoRefreshTimerId = setTimeout(() => generateQR(isOD), data.expiresIn - refreshBuffer);
                 }
             } catch (error) {
                 document.getElementById('error-message').textContent = error.response?.data?.message || 'Connection failed';
@@ -263,10 +290,55 @@
             }
         }
 
+        async function updateLiveScans() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await axios.get(`${API_BASE}/api/attendance/by-date`, { params: { date: today } });
+                const scans = response.data.data;
+                
+                const container = document.getElementById('recent-scans');
+                const countEl = document.getElementById('scan-count');
+                countEl.textContent = `${scans.length} Scans`;
+
+                if (scans.length === 0) {
+                    container.innerHTML = '<div class="text-center py-4 text-slate-400 text-xs">Waiting for scans...</div>';
+                    return;
+                }
+
+                // Sort by time descending and take top 10
+                const latestScans = [...scans].reverse().slice(0, 10);
+                
+                container.innerHTML = latestScans.map(scan => `
+                    <div class="flex items-center justify-between p-3 bg-white border border-slate-50 rounded-2xl shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                                ${(scan.name || 'S').charAt(0)}
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-800">${scan.name || 'Student'}</p>
+                                <p class="text-[10px] text-slate-400 font-medium">${scan.universityRollNo} • ${scan.section}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block">${scan.time}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to fetch scans:', error);
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('generate-btn').addEventListener('click', () => generateQR(false));
             document.getElementById('generate-od-btn').addEventListener('click', () => generateQR(true));
-            generateQR(false);
+            
+            // Default to OD as per adjusted layout
+            generateQR(true);
+            
+            // Poll for live scans
+            updateLiveScans();
+            setInterval(updateLiveScans, 5000);
         });
     </script>
 </body>

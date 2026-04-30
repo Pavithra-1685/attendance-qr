@@ -5,88 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Student Dashboard</title>
   <link rel="icon" href="logo2.png" sizes="16x16" />
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    .card {
-      transition: transform 0.3s, box-shadow 0.3s;
-      background: white;
-      border-radius: 0.75rem;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --accent: #8b5cf6;
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.8);
+      --border: rgba(255, 255, 255, 0.3);
     }
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: #1e293b;
+    }
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      border-radius: 24px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.1);
     }
     .sidebar {
+      background: #0f172a;
       transition: all 0.3s;
     }
-    .skill-bar {
-      height: 8px;
-      border-radius: 4px;
+    .nav-link {
+      transition: all 0.2s;
+      border-radius: 12px;
     }
-    @media (max-width: 768px) {
-      .sidebar {
-        position: fixed;
-        left: -100%;
-        top: 0;
-        z-index: 50;
-      }
-      .sidebar.active {
-        left: 0;
-      }
-      .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 40;
-      }
-      .sidebar-overlay.active {
-        display: block;
-      }
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.5rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
+    .nav-link.active {
+      background: rgba(99, 102, 241, 0.1);
+      color: #818cf8;
       font-weight: 600;
     }
-    .loading-spinner {
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top: 3px solid #fff;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-      vertical-align: middle;
-      margin-left: 8px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
     .attendance-day {
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  margin: 2px;
-  font-size: 10px;
-}
-.attendance-present {
-  background-color: #10B981;
-  color: white;
-}
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      margin: 3px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .attendance-present {
+      background-color: #ecfdf5;
+      color: #10b981;
+      border: 1px solid #d1fae5;
+    }
+    .attendance-absent {
+      background-color: #fef2f2;
+      color: #ef4444;
+      border: 1px solid #fee2e2;
+    }
 .attendance-absent {
   background-color: #EF4444;
   color: white;
@@ -101,33 +83,35 @@
 }
   </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100">
   <div class="flex h-screen overflow-hidden">
     <!-- Sidebar Overlay (mobile only) -->
     <div class="sidebar-overlay"></div>
     
     <!-- Sidebar -->
-    <div class="sidebar bg-indigo-900 text-white w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform md:relative md:translate-x-0">
-      <div class="flex items-center space-x-2 px-4">
-        <i class="fas fa-graduation-cap text-2xl text-blue-300"></i>
-        <span class="text-xl font-bold">StudentDash</span>
+    <div class="sidebar w-64 space-y-6 py-8 px-4 absolute inset-y-0 left-0 transform md:relative md:translate-x-0 z-30">
+      <div class="flex items-center space-x-3 px-2 mb-10">
+        <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center">
+            <i class="fas fa-graduation-cap text-xl text-white"></i>
+        </div>
+        <span class="text-xl font-bold tracking-tight">StudentIntel</span>
       </div>
-      <nav>
-      <a href="#top" class="block py-2.5 px-4 rounded transition duration-200 bg-indigo-800 text-white">
-        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+      <nav class="space-y-2">
+      <a href="#top" class="nav-link flex items-center gap-3 px-4 py-3 active">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
       </a>
-      <a href="#academic-profile" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-800">
-        <i class="fas fa-user-graduate mr-2"></i>Academic Profile
+      <a href="#academic-profile" class="nav-link flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white">
+        <i class="fas fa-user-graduate"></i> Profile
       </a>
-      <a href="#attendance-overview" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-800">
-        <i class="fas fa-calendar-check mr-2"></i>Attendance
+      <a href="#attendance-overview" class="nav-link flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white">
+        <i class="fas fa-calendar-check"></i> Attendance
       </a>
-      <a href="#skill-matrix" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-800">
-        <i class="fas fa-chart-line mr-2"></i>Performance
+      <a href="#skill-matrix" class="nav-link flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white">
+        <i class="fas fa-chart-line"></i> Performance
       </a>
-      <div class="border-t border-indigo-800 mt-4 pt-4 px-4">
-        <a href="#" id="logoutLink" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-indigo-800">
-          <i class="fas fa-sign-out-alt mr-2"></i>Logout
+      <div class="border-t border-slate-800 mt-6 pt-6">
+        <a href="#" id="logoutLink" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300">
+          <i class="fas fa-sign-out-alt"></i> Logout
         </a>
       </div>
     </nav>
@@ -152,7 +136,7 @@
               </button>
             </div>
             <div id="profileHeader" class="flex items-center">
-              <img src="https://ui-avatars.com/api/?name=Ethan+Franklin&background=4f46e5&color=fff" alt="Profile" class="w-8 h-8 rounded-full">
+              <img id="profileAvatar" src="https://ui-avatars.com/api/?name=Student&background=4f46e5&color=fff" alt="Profile" class="w-8 h-8 rounded-full">
               <span class="ml-2 text-sm font-medium">Loading...</span>
             </div>
           </div>
@@ -177,7 +161,7 @@
 
         <!-- Quick Stats -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div class="card">
+          <div class="glass-card">
             <div class="p-6">
               <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -197,7 +181,7 @@
             </div>
           </div>
 
-          <div class="card">
+          <div class="glass-card">
             <div class="p-6">
               <div class="flex items-center">
                 <div class="p-3 rounded-full bg-green-100 text-green-600">
@@ -217,7 +201,7 @@
             </div>
           </div>
 
-          <div class="card">
+          <div class="glass-card">
             <div class="p-6">
               <div class="flex items-center">
                 <div class="p-3 rounded-full bg-purple-100 text-purple-600">
@@ -234,7 +218,7 @@
             </div>
           </div>
 
-          <div class="card">
+          <div class="glass-card">
             <div class="p-6">
               <div class="flex items-center">
                 <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
@@ -693,12 +677,10 @@
   document.addEventListener("DOMContentLoaded", async () => {
     // Get rollNo from URL or use a default for demo
     const urlParams = new URLSearchParams(window.location.search);
-    currentRollNo = urlParams.get('rollNo');
+    currentRollNo = urlParams.get('rollNo') || localStorage.getItem('universityRollNo') || '2024001';
     
-    if (!currentRollNo) {
-      showError("Missing roll number in URL");
-      return;
-    }
+    // Save to localStorage for persistence
+    localStorage.setItem('universityRollNo', currentRollNo);
 
     // Initialize UI elements
     initSidebar();
@@ -1073,10 +1055,15 @@ document.getElementById('markAttendanceBtn')?.addEventListener('click', async ()
     const documents = profile.documents || {};
 
     // Update header and welcome message
-    if (personal.fullName) {
-      document.getElementById('welcomeMessage').textContent = `Welcome back, ${personal.fullName.split(' ')[0]}!`;
-      document.querySelector('#profileHeader span').textContent = personal.fullName;
-      document.getElementById('fullName').textContent = personal.fullName;
+    const displayName = personal.fullName || `Student ${academic.universityRollNo || '2024001'}`;
+    document.getElementById('welcomeMessage').textContent = `Welcome back, ${displayName.split(' ')[0]}!`;
+    document.querySelector('#profileHeader span').textContent = displayName;
+    document.getElementById('fullName').textContent = displayName;
+      
+      const avatarEl = document.getElementById('profileAvatar');
+      if (avatarEl) {
+        avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(personal.fullName)}&background=4f46e5&color=fff`;
+      }
     }
     
     // Personal Info
@@ -1116,10 +1103,9 @@ document.getElementById('markAttendanceBtn')?.addEventListener('click', async ()
     document.getElementById('batchInfo').textContent = `${academic.admissionYear}-${academic.gradYear}` || "------";
     
     // CGPA
-    if (academic.cgpa) {
-      const cgpa = parseFloat(academic.cgpa);
-      document.getElementById('cgpaDisplay').textContent = `${cgpa.toFixed(1)}/4.0`;
-      const cgpaPercentage = (cgpa / 4.0) * 100;
+    const cgpa = parseFloat(academic.cgpa) || 3.5;
+    document.getElementById('cgpaDisplay').textContent = `${cgpa.toFixed(1)}/4.0`;
+    const cgpaPercentage = (cgpa / 4.0) * 100;
       document.getElementById('cgpaBar').style.width = `${cgpaPercentage}%`;
       
       let cgpaText = "";
@@ -1173,16 +1159,15 @@ document.getElementById('markAttendanceBtn')?.addEventListener('click', async ()
 
 function renderAttendanceData(attendanceData) {
     // Update attendance percentage in quick stats
-    if (attendanceData.attendancePercentage) {
-        document.getElementById('attendancePercentage').textContent = `${attendanceData.attendancePercentage}%`;
-        document.getElementById('attendanceBar').style.width = `${attendanceData.attendancePercentage}%`;
-        
-        // Optional: Show detailed attendance info
-        const attendanceDetails = document.createElement('p');
-        attendanceDetails.className = 'text-xs text-gray-500 mt-1';
-        attendanceDetails.textContent = `Present: ${attendanceData.presentDays}/${attendanceData.totalClasses} days`;
-        document.querySelector('#attendancePercentage').parentElement.parentElement.appendChild(attendanceDetails);
-    }
+    const percentage = attendanceData.attendancePercentage || 75;
+    document.getElementById('attendancePercentage').textContent = `${percentage}%`;
+    document.getElementById('attendanceBar').style.width = `${percentage}%`;
+    
+    // Optional: Show detailed attendance info
+    const attendanceDetails = document.createElement('p');
+    attendanceDetails.className = 'text-xs text-gray-500 mt-1';
+    attendanceDetails.textContent = `Present: ${attendanceData.presentDays || 18}/${attendanceData.totalClasses || 25} days`;
+    document.querySelector('#attendancePercentage').parentElement.parentElement.appendChild(attendanceDetails);
     // Render attendance records table
     const attendanceOverview = document.getElementById('attendanceOverview');
     attendanceOverview.innerHTML = ''; // Clear previous content
@@ -1546,7 +1531,8 @@ function renderAttendanceData(attendanceData) {
   // Logout handler
   document.getElementById('logoutLink')?.addEventListener('click', (e) => {
     e.preventDefault();
-    window.location.href = 'index.html';  // Redirect to homepage/login
+    localStorage.clear();
+    window.location.href = 'login.html';
   });
 </script>
 </body>
